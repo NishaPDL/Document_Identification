@@ -1,0 +1,45 @@
+server:
+  port: 8080
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+spring:
+  application:
+    name: document-identification-api
+  servlet:
+    multipart:
+      enabled: true
+
+# Google Cloud Configuration
+google:
+  cloud:
+    project-id: ${GOOGLE_CLOUD_PROJECT:pdlgcpcloud}
+    location: ${GOOGLE_CLOUD_LOCATION:us-central1}
+    vertex-ai:
+      model: ${GEMINI_MODEL:gemini-2.0-flash}
+
+# Application Configuration
+app:
+  supported-image-extensions:
+    - .png
+    - .jpg
+    - .jpeg
+    - .webp
+    - .bmp
+  document-types:
+    - Aadhaar
+    - PAN
+    - Voter ID
+    - Driving License
+    - None
+
+# Logging Configuration
+logging:
+  level:
+    com.nishapdl.documentidentification: INFO
+    com.google.cloud: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
