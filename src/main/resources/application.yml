@@ -18,6 +18,10 @@ google:
 gemini:
   model: ${GEMINI_MODEL:gemini-2.0-flash}
 
+document:
+  upload:
+    base-path: ${DOCUMENT_UPLOAD_PATH:/uploads}
+
 logging:
   level:
     com.documentclassifier: INFO

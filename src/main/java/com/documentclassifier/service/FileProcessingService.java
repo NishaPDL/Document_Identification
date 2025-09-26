@@ -11,7 +11,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -76,6 +78,20 @@ public class FileProcessingService {
         
         logger.info("Successfully extracted {} image files from ZIP", imageFiles.size());
         return imageFiles;
+    }
+    
+    /**
+     * Extract images from ZIP file and return as a map for easier lookup
+     */
+    public Map<String, File> extractImagesFromZipAsMap(MultipartFile zipFile) throws IOException {
+        List<File> imageFiles = extractImagesFromZip(zipFile);
+        Map<String, File> fileMap = new HashMap<>();
+        
+        for (File file : imageFiles) {
+            fileMap.put(file.getName(), file);
+        }
+        
+        return fileMap;
     }
     
     /**

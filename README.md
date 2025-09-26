@@ -108,7 +108,7 @@ The API will be available at `http://localhost:8080`
 ### Classify Documents
 **Endpoint**: `POST /api/classify-documents`
 
-**Description**: Upload a ZIP file containing document images for classification.
+**Description**: Upload a ZIP file containing document images for classification only.
 
 **Request**:
 - Method: `POST`
@@ -130,6 +130,70 @@ curl -X POST \
   http://localhost:8080/api/classify-documents \
   -H 'Content-Type: multipart/form-data' \
   -F 'file=@documents.zip'
+```
+
+### Classify and Upload Documents
+**Endpoint**: `POST /api/classify-and-upload`
+
+**Description**: Upload a ZIP file containing document images, classify them, and upload to organized folders.
+
+**Request**:
+- Method: `POST`
+- Content-Type: `multipart/form-data`
+- Parameters: 
+  - `file` (ZIP file containing images)
+  - `userId` (User identifier for organizing uploads)
+
+**Response**:
+```json
+{
+  "userId": "user123",
+  "totalFiles": 3,
+  "results": {
+    "image1.jpg": {
+      "classification": "PAN",
+      "uploaded": true,
+      "path": "/uploads/user123/pan/image1_1640995200000.jpg"
+    },
+    "image2.png": {
+      "classification": "Aadhaar",
+      "uploaded": true,
+      "path": "/uploads/user123/aadhaar/image2_1640995201000.png"
+    },
+    "image3.webp": {
+      "classification": "None",
+      "uploaded": false,
+      "reason": "Document type not recognized"
+    }
+  }
+}
+```
+
+**Example using cURL**:
+```bash
+curl -X POST \
+  http://localhost:8080/api/classify-and-upload \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@documents.zip' \
+  -F 'userId=user123'
+```
+
+### Get Upload Statistics
+**Endpoint**: `GET /api/upload-stats/{userId}`
+
+**Description**: Get document upload statistics for a specific user.
+
+**Response**:
+```json
+{
+  "userId": "user123",
+  "documentCounts": {
+    "aadhaar": 5,
+    "pan": 3,
+    "voter-id": 2,
+    "driving-license": 1
+  }
+}
 ```
 
 ### Health Check
@@ -173,6 +237,32 @@ gemini:
 - JPEG (.jpg, .jpeg)
 - WebP (.webp)
 - BMP (.bmp)
+
+### Document Upload Structure
+When using the `/api/classify-and-upload` endpoint, documents are organized in the following folder structure:
+
+```
+/uploads/
+├── user123/
+│   ├── aadhaar/
+│   │   ├── aadhaar_doc_1640995200000.jpg
+│   │   └── user_aadhaar_1640995201000.png
+│   ├── pan/
+│   │   ├── pan_card_1640995202000.jpg
+│   │   └── pan_document_1640995203000.webp
+│   ├── voter-id/
+│   │   └── voter_card_1640995204000.png
+│   └── driving-license/
+│       └── license_1640995205000.jpg
+└── user456/
+    ├── aadhaar/
+    └── pan/
+```
+
+**Configuration**:
+- Base upload path can be configured via `DOCUMENT_UPLOAD_PATH` environment variable
+- Default path: `/uploads`
+- Files are renamed with timestamp suffix to avoid conflicts
 
 ## 🚀 Deployment
 
