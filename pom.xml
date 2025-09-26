@@ -49,6 +49,13 @@
             <version>${google-cloud-aiplatform.version}</version>
         </dependency>
 
+        <!-- Google Cloud Vertex AI Generative AI -->
+        <dependency>
+            <groupId>com.google.cloud</groupId>
+            <artifactId>google-cloud-vertexai</artifactId>
+            <version>1.7.0</version>
+        </dependency>
+
         <!-- Apache Commons IO for file operations -->
         <dependency>
             <groupId>commons-io</groupId>

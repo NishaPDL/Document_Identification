@@ -1,36 +1,22 @@
 package com.documentclassifier.service;
 
-import com.google.cloud.aiplatform.v1.*;
-import com.google.protobuf.Struct;
-import com.google.protobuf.Value;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
+import com.google.cloud.vertexai.generativeai.ResponseHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class DocumentClassificationService {
     
     private static final Logger logger = LoggerFactory.getLogger(DocumentClassificationService.class);
     
-    private final PredictionServiceClient predictionServiceClient;
-    private final String projectId;
-    private final String location;
-    
-    @Value("${gemini.model}")
-    private String geminiModel;
+    private final GenerativeModel generativeModel;
     
     @Autowired
-    public DocumentClassificationService(
-            PredictionServiceClient predictionServiceClient,
-            String projectId,
-            String location) {
-        this.predictionServiceClient = predictionServiceClient;
-        this.projectId = projectId;
-        this.location = location;
+    public DocumentClassificationService(GenerativeModel generativeModel) {
+        this.generativeModel = generativeModel;
     }
     
     /**
@@ -46,9 +32,14 @@ public class DocumentClassificationService {
             logger.debug("Classifying document with {} characters of text", extractedText.length());
             
             String prompt = buildClassificationPrompt(extractedText);
-            String response = callGeminiModel(prompt);
+            logger.debug("Sending classification prompt to Gemini");
             
-            String classification = parseClassificationResponse(response);
+            // Generate content using Gemini
+            var response = generativeModel.generateContent(prompt);
+            String responseText = ResponseHandler.getText(response);
+            
+            logger.debug("Received response from Gemini: {}", responseText);
+            String classification = parseClassificationResponse(responseText);
             logger.info("Document classified as: {}", classification);
             
             return classification;
@@ -81,52 +72,6 @@ public class DocumentClassificationService {
     }
     
     /**
-     * Call Gemini model via Vertex AI
-     */
-    private String callGeminiModel(String prompt) throws Exception {
-        // Build the endpoint name
-        String endpoint = EndpointName.ofProjectLocationPublisherModelName(
-                projectId, location, "google", geminiModel
-        ).toString();
-        
-        // Create the request payload
-        Struct.Builder instanceBuilder = Struct.newBuilder();
-        instanceBuilder.putFields("prompt", Value.newBuilder().setStringValue(prompt).build());
-        
-        Struct.Builder parametersBuilder = Struct.newBuilder();
-        parametersBuilder.putFields("temperature", Value.newBuilder().setNumberValue(0.1).build());
-        parametersBuilder.putFields("maxOutputTokens", Value.newBuilder().setNumberValue(10).build());
-        parametersBuilder.putFields("topP", Value.newBuilder().setNumberValue(0.8).build());
-        parametersBuilder.putFields("topK", Value.newBuilder().setNumberValue(40).build());
-        
-        // Create prediction request
-        PredictRequest request = PredictRequest.newBuilder()
-                .setEndpoint(endpoint)
-                .addInstances(Value.newBuilder().setStructValue(instanceBuilder.build()).build())
-                .setParameters(Value.newBuilder().setStructValue(parametersBuilder.build()).build())
-                .build();
-        
-        // Make the prediction
-        PredictResponse response = predictionServiceClient.predict(request);
-        
-        if (response.getPredictionsCount() == 0) {
-            throw new RuntimeException("No predictions returned from Gemini model");
-        }
-        
-        // Extract the response text
-        Value prediction = response.getPredictions(0);
-        if (prediction.hasStructValue()) {
-            Struct predictionStruct = prediction.getStructValue();
-            if (predictionStruct.containsFields("content")) {
-                return predictionStruct.getFieldsMap().get("content").getStringValue();
-            }
-        }
-        
-        // Fallback: try to extract text from the prediction directly
-        return prediction.getStringValue();
-    }
-    
-    /**
      * Parse and validate the classification response
      */
     private String parseClassificationResponse(String response) {
@@ -150,3 +95,4 @@ public class DocumentClassificationService {
         }
     }
 }
+

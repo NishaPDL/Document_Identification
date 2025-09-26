@@ -242,7 +242,7 @@ This Java implementation provides equivalent functionality to the original Pytho
 | `tempfile.TemporaryDirectory` | `Files.createTempDirectory()` |
 | `zipfile.ZipFile` | `ZipInputStream` |
 | `google.cloud.vision` | `ImageAnnotatorClient` |
-| `vertexai.GenerativeModel` | `PredictionServiceClient` |
+| `vertexai.GenerativeModel` | `GenerativeModel` |
 
 ## 📝 License
 
@@ -280,7 +280,15 @@ This project is licensed under the MIT License.
    Solution: Check file size limits in application.yml (default: 50MB)
    ```
 
-5. **Memory Issues**
+5. **FAILED_PRECONDITION: Gemini cannot be accessed through Vertex Predict API**
+   ```
+   Error: Gemini cannot be accessed through Vertex Predict/RawPredict API
+   
+   Solution: This is fixed in the current implementation. The application now uses
+   the correct Generative AI API (google-cloud-vertexai) instead of the Prediction API.
+   ```
+
+6. **Memory Issues**
    ```
    Solution: Increase JVM heap size: -Xmx2g
    ```

@@ -5,6 +5,8 @@ import com.google.api.gax.core.FixedCredentialsProvider;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.aiplatform.v1.PredictionServiceClient;
 import com.google.cloud.aiplatform.v1.PredictionServiceSettings;
+import com.google.cloud.vertexai.VertexAI;
+import com.google.cloud.vertexai.generativeai.GenerativeModel;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
 import com.google.cloud.vision.v1.ImageAnnotatorSettings;
 import org.slf4j.Logger;
@@ -25,6 +27,9 @@ public class GoogleCloudConfig {
 
     @Value("${google.cloud.location}")
     private String location;
+
+    @Value("${gemini.model}")
+    private String geminiModel;
 
     @Bean
     public GoogleCredentials googleCredentials() throws IOException {
@@ -75,5 +80,24 @@ public class GoogleCloudConfig {
     @Bean
     public String location() {
         return location;
+    }
+
+    @Bean
+    public VertexAI vertexAI(GoogleCredentials credentials) {
+        logger.info("Creating VertexAI client with project: {} and location: {}", projectId, location);
+        return new VertexAI.Builder()
+                .setProjectId(projectId)
+                .setLocation(location)
+                .setCredentials(credentials)
+                .build();
+    }
+
+    @Bean
+    public GenerativeModel generativeModel(VertexAI vertexAI) {
+        logger.info("Creating GenerativeModel with model: {}", geminiModel);
+        return new GenerativeModel.Builder()
+                .setModelName(geminiModel)
+                .setVertexAi(vertexAI)
+                .build();
     }
 }
