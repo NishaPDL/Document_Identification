@@ -187,6 +187,94 @@ public class DocumentClassifierController {
         }
     }
     
+    @PostMapping("/classify-and-upload-single")
+    public ResponseEntity<?> classifyAndUploadSingleDocument(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("userId") String userId) {
+        
+        logger.info("Received single document upload request for user: {} with file: {}", userId, file.getOriginalFilename());
+        
+        // Validate file type
+        if (!isImageFile(file)) {
+            logger.warn("Invalid file type received: {}", file.getContentType());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Only image files are allowed (PNG, JPG, JPEG, WebP, BMP)."));
+        }
+        
+        // Validate userId
+        if (userId == null || userId.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "User ID is required."));
+        }
+        
+        File tempFile = null;
+        
+        try {
+            // Save uploaded file temporarily
+            tempFile = saveUploadedFileTemporarily(file);
+            logger.info("Saved temporary file: {}", tempFile.getPath());
+            
+            // Extract text using OCR
+            String extractedText = ocrService.extractTextFromImage(tempFile);
+            
+            if (extractedText.isEmpty()) {
+                logger.warn("No text extracted from image: {}", file.getOriginalFilename());
+                return ResponseEntity.ok(Map.of(
+                    "classification", "None",
+                    "uploaded", false,
+                    "reason", "No text could be extracted from the image"
+                ));
+            }
+            
+            // Classify document type
+            String documentType = classificationService.classifyDocumentType(extractedText);
+            logger.debug("Document classified as: {}", documentType);
+            
+            // Check if classification was successful
+            if (documentType.startsWith("Error") || documentType.equals("None")) {
+                return ResponseEntity.ok(Map.of(
+                    "classification", documentType,
+                    "uploaded", false,
+                    "reason", documentType.startsWith("Error") ? "Classification error" : "Document type not recognized"
+                ));
+            }
+            
+            // Upload the classified document
+            Map<String, String> classificationResults = Map.of(file.getOriginalFilename(), documentType);
+            Map<String, File> imageFiles = Map.of(file.getOriginalFilename(), tempFile);
+            
+            Map<String, Object> uploadResults = uploadService.uploadClassifiedDocuments(
+                    classificationResults, imageFiles, userId);
+            
+            // Get the result for this specific file
+            Map<String, Object> fileResult = (Map<String, Object>) uploadResults.get(file.getOriginalFilename());
+            
+            logger.info("Successfully processed and uploaded document for user {}: {}", userId, documentType);
+            
+            return ResponseEntity.ok(fileResult);
+            
+        } catch (Exception e) {
+            logger.error("Error processing single document: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of(
+                        "classification", "Error",
+                        "uploaded", false,
+                        "error", e.getMessage()
+                    ));
+            
+        } finally {
+            // Clean up temporary file
+            if (tempFile != null && tempFile.exists()) {
+                try {
+                    Files.delete(tempFile.toPath());
+                    logger.debug("Cleaned up temporary file: {}", tempFile.getPath());
+                } catch (IOException e) {
+                    logger.warn("Failed to delete temporary file: {}", tempFile.getPath());
+                }
+            }
+        }
+    }
+    
     @GetMapping("/upload-stats/{userId}")
     public ResponseEntity<?> getUploadStats(@PathVariable String userId) {
         try {
@@ -225,5 +313,51 @@ public class DocumentClassifierController {
         return (filename != null && filename.toLowerCase().endsWith(".zip")) ||
                (contentType != null && (contentType.equals("application/zip") || 
                                        contentType.equals("application/x-zip-compressed")));
+    }
+    
+    /**
+     * Validate if uploaded file is an image file
+     */
+    private boolean isImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return false;
+        }
+        
+        String contentType = file.getContentType();
+        String filename = file.getOriginalFilename();
+        
+        // Check content type
+        if (contentType != null && contentType.startsWith("image/")) {
+            return true;
+        }
+        
+        // Check file extension
+        if (filename != null) {
+            String lowerFilename = filename.toLowerCase();
+            return lowerFilename.endsWith(".png") || 
+                   lowerFilename.endsWith(".jpg") || 
+                   lowerFilename.endsWith(".jpeg") || 
+                   lowerFilename.endsWith(".webp") || 
+                   lowerFilename.endsWith(".bmp");
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Save uploaded file temporarily for processing
+     */
+    private File saveUploadedFileTemporarily(MultipartFile file) throws IOException {
+        // Create temporary file
+        String originalFilename = file.getOriginalFilename();
+        String extension = "";
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        
+        File tempFile = File.createTempFile("upload_", extension);
+        file.transferTo(tempFile);
+        
+        return tempFile;
     }
 }

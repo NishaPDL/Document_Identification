@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRMS Employee Document Upload Integration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="file"] {
+            padding: 8px;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .config-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
+        }
+        .code-block {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 HRMS Employee Document Upload Integration</h1>
+        
+        <div class="instructions">
+            <h3>📋 Integration Instructions</h3>
+            <p>This example shows how to integrate the document classification service with your HRMS Employee page at <code>https://predemoui.paisalo.in:4022/hrms/Employee</code></p>
+        </div>
+
+        <div class="config-section">
+            <h3>⚙️ Configuration</h3>
+            <p>Update the configuration in the JavaScript file to match your setup:</p>
+            <div class="code-block">
+const config = {
+    apiBaseUrl: 'http://your-java-service:8080/api', // Your Java service URL
+    employeeIdField: 'employeeId', // Your employee ID field name
+    debug: true // Set to false in production
+};
+            </div>
+        </div>
+
+        <!-- Example Employee Form -->
+        <h2>👤 Employee Information Form (Example)</h2>
+        <form id="employeeForm">
+            <div class="form-group">
+                <label for="employeeId">Employee ID:</label>
+                <input type="text" id="employeeId" name="employeeId" value="EMP001" placeholder="Enter Employee ID">
+            </div>
+            
+            <div class="form-group">
+                <label for="employeeName">Employee Name:</label>
+                <input type="text" id="employeeName" name="employeeName" value="John Doe" placeholder="Enter Employee Name">
+            </div>
+            
+            <div class="form-group">
+                <label for="employeeaadhar">Aadhaar Document:</label>
+                <input type="file" id="employeeaadhar" name="employeeaadhar" accept="image/*">
+                <small style="color: #666;">Upload Aadhaar document (PNG, JPG, JPEG, WebP, BMP)</small>
+            </div>
+            
+            <button type="button" class="btn" onclick="submitForm()">Save Employee</button>
+        </form>
+
+        <div style="margin-top: 30px;">
+            <h3>📝 Integration Steps</h3>
+            <ol>
+                <li><strong>Include the JavaScript file</strong> in your HRMS page:
+                    <div class="code-block">&lt;script src="document-upload-integration.js"&gt;&lt;/script&gt;</div>
+                </li>
+                
+                <li><strong>Update the configuration</strong> to match your Java service URL and employee ID field</li>
+                
+                <li><strong>Ensure your file input has the correct ID</strong>:
+                    <div class="code-block">&lt;input type="file" id="employeeaadhar" name="employeeaadhar" accept="image/*"&gt;</div>
+                </li>
+                
+                <li><strong>The integration will automatically</strong>:
+                    <ul>
+                        <li>Detect when a file is selected</li>
+                        <li>Validate it's an image file</li>
+                        <li>Send it to your Java service for classification</li>
+                        <li>Verify it's an Aadhaar document</li>
+                        <li>Upload it to the organized folder structure</li>
+                        <li>Show success/error feedback</li>
+                        <li>Store the upload path in a hidden field for form submission</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h3>🎯 Expected Behavior</h3>
+            <ul>
+                <li>✅ <strong>Valid Aadhaar</strong>: Document verified and uploaded to <code>/uploads/{employeeId}/aadhaar/</code></li>
+                <li>⚠️ <strong>Wrong Document Type</strong>: Warning shown if document is not classified as Aadhaar</li>
+                <li>❌ <strong>Invalid File</strong>: Error shown for non-image files or processing failures</li>
+                <li>📁 <strong>Upload Path Stored</strong>: Hidden field <code>aadhaarUploadPath</code> contains the file path for form submission</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <h3>🔧 API Endpoints Used</h3>
+            <ul>
+                <li><code>POST /api/classify-and-upload-single</code> - For single file upload and classification</li>
+                <li><code>GET /api/upload-stats/{userId}</code> - For getting upload statistics (optional)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Include the integration script -->
+    <script src="document-upload-integration.js"></script>
+    
+    <script>
+        function submitForm() {
+            // Get the upload path if document was uploaded
+            const uploadPath = document.getElementById('aadhaarUploadPath');
+            const employeeId = document.getElementById('employeeId').value;
+            const employeeName = document.getElementById('employeeName').value;
+            
+            if (uploadPath && uploadPath.value) {
+                alert(`Form would be submitted with:\n` +
+                      `Employee ID: ${employeeId}\n` +
+                      `Employee Name: ${employeeName}\n` +
+                      `Aadhaar Upload Path: ${uploadPath.value}`);
+            } else {
+                alert(`Form would be submitted with:\n` +
+                      `Employee ID: ${employeeId}\n` +
+                      `Employee Name: ${employeeName}\n` +
+                      `No Aadhaar document uploaded`);
+            }
+        }
+    </script>
+</body>
+</html>

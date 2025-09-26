@@ -178,6 +178,36 @@ curl -X POST \
   -F 'userId=user123'
 ```
 
+### Classify and Upload Single Document
+**Endpoint**: `POST /api/classify-and-upload-single`
+
+**Description**: Upload a single document image, classify it, and upload to organized folder.
+
+**Request**:
+- Method: `POST`
+- Content-Type: `multipart/form-data`
+- Parameters: 
+  - `file` (Single image file)
+  - `userId` (User identifier for organizing uploads)
+
+**Response**:
+```json
+{
+  "classification": "Aadhaar",
+  "uploaded": true,
+  "path": "/uploads/user123/aadhaar/document_1640995200000.jpg"
+}
+```
+
+**Example using cURL**:
+```bash
+curl -X POST \
+  http://localhost:8080/api/classify-and-upload-single \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'file=@aadhaar.jpg' \
+  -F 'userId=user123'
+```
+
 ### Get Upload Statistics
 **Endpoint**: `GET /api/upload-stats/{userId}`
 
@@ -263,6 +293,29 @@ When using the `/api/classify-and-upload` endpoint, documents are organized in t
 - Base upload path can be configured via `DOCUMENT_UPLOAD_PATH` environment variable
 - Default path: `/uploads`
 - Files are renamed with timestamp suffix to avoid conflicts
+
+## 🏢 HRMS Integration
+
+This service includes a ready-to-use JavaScript integration for HRMS systems. The integration automatically handles Aadhaar document uploads from employee forms.
+
+### Features
+- **Automatic Classification**: Verifies uploaded files are Aadhaar documents
+- **Real-time Feedback**: Shows success/error messages to users
+- **Form Integration**: Stores upload path for form submission
+- **Employee ID Detection**: Automatically detects employee ID from form fields
+
+### Quick Setup
+1. Include `hrms-integration/document-upload-integration.js` in your HRMS page
+2. Ensure your Aadhaar file input has ID `employeeaadhar`
+3. Configure the API URL in the JavaScript file
+
+### Example Usage
+```html
+<input type="file" id="employeeaadhar" name="employeeaadhar" accept="image/*">
+<script src="document-upload-integration.js"></script>
+```
+
+See `hrms-integration/README.md` for detailed integration instructions.
 
 ## 🚀 Deployment
 
