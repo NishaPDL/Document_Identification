@@ -74,7 +74,12 @@ export GOOGLE_APPLICATION_CREDENTIALS="path/to/key.json"
 
 Option B: Application Default Credentials (For development)
 ```bash
+# Login and set quota project
 gcloud auth application-default login
+gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+
+# Alternative: Set quota project via environment variable
+export GOOGLE_CLOUD_QUOTA_PROJECT=YOUR_PROJECT_ID
 ```
 
 ### 3. Configure Environment Variables
@@ -247,22 +252,35 @@ This project is licensed under the MIT License.
 
 ### Common Issues
 
-1. **Authentication Error**
+1. **PERMISSION_DENIED: Quota Project Required**
    ```
-   Solution: Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly
-   ```
-
-2. **API Not Enabled**
-   ```
-   Solution: Enable Vision API and Vertex AI API in Google Cloud Console
-   ```
-
-3. **File Size Error**
-   ```
-   Solution: Check file size limits in application.yml
+   Error: Your application is authenticating by using local Application Default Credentials. 
+   The vision.googleapis.com API requires a quota project...
+   
+   Solution: Set quota project using one of these methods:
+   - gcloud auth application-default set-quota-project YOUR_PROJECT_ID
+   - export GOOGLE_CLOUD_QUOTA_PROJECT=YOUR_PROJECT_ID
+   - The application automatically sets the quota project from google.cloud.project-id
    ```
 
-4. **Memory Issues**
+2. **Authentication Error**
+   ```
+   Solution: Ensure GOOGLE_APPLICATION_CREDENTIALS is set correctly or use:
+   gcloud auth application-default login
+   ```
+
+3. **API Not Enabled**
+   ```
+   Solution: Enable Vision API and Vertex AI API in Google Cloud Console:
+   gcloud services enable vision.googleapis.com aiplatform.googleapis.com
+   ```
+
+4. **File Size Error**
+   ```
+   Solution: Check file size limits in application.yml (default: 50MB)
+   ```
+
+5. **Memory Issues**
    ```
    Solution: Increase JVM heap size: -Xmx2g
    ```

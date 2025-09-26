@@ -1,8 +1,14 @@
 package com.documentclassifier.config;
 
+import com.google.api.gax.core.CredentialsProvider;
+import com.google.api.gax.core.FixedCredentialsProvider;
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.aiplatform.v1.PredictionServiceClient;
 import com.google.cloud.aiplatform.v1.PredictionServiceSettings;
 import com.google.cloud.vision.v1.ImageAnnotatorClient;
+import com.google.cloud.vision.v1.ImageAnnotatorSettings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +18,8 @@ import java.io.IOException;
 @Configuration
 public class GoogleCloudConfig {
 
+    private static final Logger logger = LoggerFactory.getLogger(GoogleCloudConfig.class);
+
     @Value("${google.cloud.project-id}")
     private String projectId;
 
@@ -19,16 +27,43 @@ public class GoogleCloudConfig {
     private String location;
 
     @Bean
-    public ImageAnnotatorClient imageAnnotatorClient() throws IOException {
-        return ImageAnnotatorClient.create();
+    public GoogleCredentials googleCredentials() throws IOException {
+        GoogleCredentials credentials = GoogleCredentials.getApplicationDefault();
+        
+        // Set quota project if not already set
+        if (credentials.getQuotaProjectId() == null) {
+            logger.info("Setting quota project to: {}", projectId);
+            credentials = credentials.toBuilder()
+                    .setQuotaProjectId(projectId)
+                    .build();
+        }
+        
+        return credentials;
     }
 
     @Bean
-    public PredictionServiceClient predictionServiceClient() throws IOException {
+    public ImageAnnotatorClient imageAnnotatorClient(GoogleCredentials credentials) throws IOException {
+        CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
+        
+        ImageAnnotatorSettings settings = ImageAnnotatorSettings.newBuilder()
+                .setCredentialsProvider(credentialsProvider)
+                .build();
+                
+        logger.info("Creating ImageAnnotatorClient with project: {}", projectId);
+        return ImageAnnotatorClient.create(settings);
+    }
+
+    @Bean
+    public PredictionServiceClient predictionServiceClient(GoogleCredentials credentials) throws IOException {
         String endpoint = String.format("%s-aiplatform.googleapis.com:443", location);
+        CredentialsProvider credentialsProvider = FixedCredentialsProvider.create(credentials);
+        
         PredictionServiceSettings settings = PredictionServiceSettings.newBuilder()
                 .setEndpoint(endpoint)
+                .setCredentialsProvider(credentialsProvider)
                 .build();
+                
+        logger.info("Creating PredictionServiceClient with endpoint: {} and project: {}", endpoint, projectId);
         return PredictionServiceClient.create(settings);
     }
 
